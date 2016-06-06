@@ -1,0 +1,43 @@
+/**********************************************************************
+*                   UNIVERSIDADE DE BRASILIA
+*               CIC 116432 SOFTWARE BASICO 1/2016 
+*                     1º Trabalho Pratico 
+*    
+*   Professor: Bruno Macchiavello
+*
+*   Grupo:  Andressa Valadares          13/0042943
+*           Douglas Shiro Yokoyama      13/0024902
+************************************************************************/
+
+Objetivo:
+    Fixar o funcionamento de um processo de traducao. Especificamente as etapas
+de analise lexica, sintatica e semantica e a etapa de geracao de codigo objeto.
+
+Compilação:
+
+	Para montador:
+		ir para a pasta /montador 
+	
+		g++ -Wall -pedantic -std=c++11 montador.cpp -o montador
+
+	Para ligador:
+
+		ir para a pasta /ligador/src
+
+		make
+
+Execucao:
+
+	Para montador:
+	arquivo de entrada precisa estar dentro da pasta /montador
+	./montador nome_arquivo_entrada nome_arquivo_saida
+
+	Para ligador:
+	arquivos de entrada precisam estar dentro da pasta /ligador/src
+	./ligador nome_arquivo_entrada1 nome_arquivo_entrada2 nome_arquivo_saida
+
+Sistema Operacional:
+	- Ubuntu 15.10
+
+versão gcc:
+	gcc (Ubuntu 5.2.1-22ubuntu2) 5.2.1 20151010
