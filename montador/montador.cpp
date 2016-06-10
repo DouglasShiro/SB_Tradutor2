@@ -48,12 +48,8 @@ int main(int argc, char **argv)
 	dirTable["SECTION"] = 1;
 	dirTable["SPACE"] = 1;
 	dirTable["CONST"] = 1;
-	dirTable["PUBLIC"] = 0;
 	dirTable["EQU"] = 1;
 	dirTable["IF"] = 1;
-	dirTable["EXTERN"] = 0;
-	dirTable["BEGIN"] = 0;
-	dirTable["END"] = 0;
 
 
 	if (argc != 3)
@@ -63,9 +59,7 @@ int main(int argc, char **argv)
 	else
 	{
 		in = in + ".asm";
-
 		inFile.open(in.c_str());	// Abre o arquivo
-		if (inFile == NULL) perror ("ERRO: nao foi possivel encontrar arquivo de entrada");
 		/*  Insere cada linha no vetor string arq */
 		while(getline(inFile,line)){
 			arq.push_back(line);
@@ -138,38 +132,8 @@ int main(int argc, char **argv)
 		out = out + ".o";
 		outFile.open(out, fstream::out);	// Abre o arquivo
 
-		/* Se begin e end nao existem , nao eh um modulo*/
-	    if(!_begin && !_end){
-			for(vector<string>::iterator it = code.begin(); it != code.end(); it++)
+		for(vector<string>::iterator it = code.begin(); it != code.end(); it++)
 				outFile << *it << " ";
-	    }
-		else{/* SE eh um modulo imprime no arquivo com os cabecalhos*/
-			/*IMPRIMIR ARQUIVO SAIDA*/
-			//cout << "BEGIN: "<< _begin << " END: "<<_end << "\n";
-			outFile << "TABLE USE\n";
-			reverso.insert(useTable.begin(), useTable.end());
-			for (itUse=reverso.begin(); itUse!=reverso.end(); ++itUse)
-				outFile << itUse->first << "\t" << itUse->second<<"\n";
-			outFile << "\n";
-
-			outFile << "TABLE DEFINITION\n";
-			for (itMod=defTable.begin(); itMod!=defTable.end(); ++itMod)
-				outFile << itMod->first << "\t" << itMod->second<<"\n";
-			outFile << "\n";
-
-			outFile << "RELATIVE\n";
-			for(vector<int>::iterator it = relativo.begin(); it != relativo.end(); it++)
-				outFile << *it << " ";
-			outFile << "\n";
-			outFile << "\n";
-
-			outFile << "CODE\n";
-			for(vector<string>::iterator it = code.begin(); it != code.end(); it++)
-				outFile << *it << " ";
-			outFile << "\n";
-			outFile << "\n";
-
-	    }
 
 		/*FECHA ARQUIVO SAIDA*/
 		outFile.close();
@@ -337,15 +301,24 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 			else if(!it->first.compare("CONST")){
 				str = token[++j];
 				temData = TRUE;
+				string::size_type i = 0;
+
 				/* Verifica de a instrucao esta na secao DATA */
 				if((_sectionData < _sectionText) || (_sectionData > posCount) || (_sectionData == -1)){
 						cout << "ERRO SEMANTICO:" << lineCount << ": A diretiva " << it->first << " está fora da seção de dados\n";
 						_erro = TRUE;
 				}
 
-				for (string::size_type i = 0; i < str.length(); ++i)
+				/* Verifica se eh hexadecimal*/
+				if(!str.compare(0,2,"0X")){
+					i = 2;
+				}else if (!str.compare(0,3,"-0X")){
+					i = 3;
+				}
+
+				for (; i < str.length(); ++i)
 				{
-					c=str[i];
+					c = str[i];
 					if(!isdigit(c) && c != '-'){
 
 						cout << "ERRO SINTATICO:" << lineCount << ": Operando inválido\n";
@@ -357,49 +330,6 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 
 				posCount+= 1;
 			}
-			/* Diretiva EXTERN */
-			else if(!it->first.compare("EXTERN")){
-
-
-				if(!token[j-1].compare("\n")){
-					cout << "ERRO SINTATICO:" << lineCount << ": Operando inválido\n";
-					_erro = TRUE;
-				}
-				else{
-					rotulo = token[j-1].substr(0, token[j-1].length()-1);
-					if((it = simbTable.find(rotulo)) != simbTable.end()){
-
-						rotulo = rotulo + "#";
-						simbTable[rotulo] = 0;
-						simbTable.erase(it);
-
-					}
-					else{
-						cout << "ERRO SEMANTICO:" << lineCount << ": Declaração ausente \n";
-						_erro = TRUE;
-					}
-				}
-			}
-			/* Diretiva PUBLIC */
-			else if(!it->first.compare("PUBLIC")){
-				rotulo = token[++j];
-				/* Verifica se o rotulo ja foi definido */
-				 if(!rotulo.compare("\n")){
-
-					cout << "ERRO SINTATICO:" << lineCount << ": Operando inválido \n";
-					_erro = TRUE;
-				}
-				else{
-					if((itMod = defTable.find(rotulo)) != defTable.end()){
-
-						cout << "ERRO SEMANTICO:" << lineCount << ": Declaração repetida\n";
-						_erro = TRUE;
-					}
-					else{
-						defTable[rotulo] = -1;
-					}
-				}
-			}
 			/* Diretiva EQU */
 			else if(!it->first.compare("EQU")){
 				valor = "";
@@ -410,7 +340,6 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 					cout << "ERRO SINTATICO:" << lineCount << ": Operando inválido\n";
 					_erro = TRUE;
 				 }
-
 				 else
 				 {
 					 rotulo = token[j-1].substr(0, token[j-1].length()-1);
@@ -427,19 +356,6 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 						cout << "ERRO SEMANTICO:" << lineCount << ": Declaração ausente\n";
 						_erro = TRUE;
 					}
-				}
-			}/* Diretiva BEGIN */
-			else if(!it->first.compare("BEGIN")){
-				_begin = TRUE;
-			}
-			/* Diretiva END */
-			else if(!it->first.compare("END")){
-				_end = TRUE;
-				/* Se nao existe begin mas existe end*/
-				if(!_begin)
-				{
-					cout << "ERRO SINTATICO: Diretiva END declarada sem BEGIN\n";
-					_erro = TRUE;
 				}
 			}
 			/* Diretiva SECTION */
@@ -459,6 +375,43 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 				}
 
 			}
+			/* Diretiva IF */
+			else if(!it->first.compare("IF")){
+				string valor = "";
+				valor = token[j+1];
+
+				/* Se o rotulo existe na tabela de simbolos */
+				if( simbTable.find(valor) != simbTable.end()){
+
+					cout << "ERRO SINTATICO:" << lineCount << ": IF possui argumento inválido: \"" << valor << "\"\n";
+					_erro = TRUE;
+				}
+				else if(!valor.compare("\n")){
+
+					cout << "ERRO SINTATICO:" << lineCount << ": Operando inválido\n";
+					_erro = TRUE;
+				}
+				string::size_type n = j;
+				while (token[n] != "\n")
+				{
+					token[n].erase();
+					cout << "posCount: " << posCount << "	Token apagado: " << token[n] << "\n";
+					n++;
+				}
+				if(valor.compare("1"))
+				{
+
+					n++;
+					while (token[n] != "\n")
+					{
+						cout << "posCount: " << posCount << "	Token apagado: " << token[n] << "\n";
+						token[n].erase();
+						n++;
+					}
+
+				}
+
+			}
 
 			existe = 0;
 		}
@@ -466,22 +419,6 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 		/* Conta as linhas do programa */
 		if(token[j] == "\n"){
 			lineCount++;
-		}
-	}
-
-	/* Verifica erro do BEGIN sem END */
-	if((_begin == TRUE) && (_end == FALSE)){
-
-		cout << "ERRO SINTATICO: Diretiva BEGIN declarada sem END\n";
-		_erro = TRUE;
-	}
-
-	/* Verifica se o STOP existe */
-	if((_begin == FALSE) && (_end == FALSE)){
-		if(find(token.begin(), token.end(), "STOP") == token.end()){
-
-			cout << "ERRO SINTATICO: o programa não possui nenhuma instrução STOP\n";
-			_erro = TRUE;
 		}
 	}
 
@@ -545,7 +482,6 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 
 				}else{
 					cout << "ERRO SINTATICO:" << lineCount << ": Formato inválido: STOP \n";
-					_erro = TRUE;
 				}
 
 			}
@@ -624,7 +560,6 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							if(it->second < _sectionData)
 							{
 								cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
-								_erro = TRUE;
 
 							}
 
@@ -651,7 +586,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 										if(it->second < _sectionData)
 										{
 											cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
-											_erro = TRUE;
+
 										}
 										posArray2 += it->second;
 										for(map<string,int>::iterator itArray = simbTable.begin(); itArray != simbTable.end(); itArray++){
@@ -691,7 +626,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									if(it->second < _sectionData)
 									{
 										cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
-										_erro = TRUE;
+
 									}
 
 									/*se tudo der certo sexta tem mais um show*/
@@ -720,7 +655,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								if(it->second < _sectionData)
 								{
 									cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
-									_erro = TRUE;
+
 								}
 
 								//end = posCount + 1;
@@ -751,7 +686,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 										if(it->second < _sectionData)
 										{
 											cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
-											_erro = TRUE;
+
 										}
 
 										posArray2 += it->second;
@@ -793,7 +728,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									if(it->second < _sectionData)
 									{
 										cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
-										_erro = TRUE;
+
 									}
 
 									/*se tudo der certo sexta tem mais um show*/
@@ -866,6 +801,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							}
 							code.push_back(itOp->second);
 							code.push_back(to_string(it->second + posArray));
+							cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 							relativo.push_back(posCount+1);
 
 							posCount += 2;
@@ -923,7 +859,6 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 					/*salva no arquivo de saida o endereco do SPACE e 0's*/
 				}else{
 					cout << "ERRO SINTATICO:" << lineCount << ": Simbolo inválido: \"" << token[j-1] << "\"\n";
-					_erro = TRUE;
 				}
 			}else if(!it->first.compare("CONST")){
 						str = token[j+1];
@@ -931,66 +866,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						/*Arquivo Saida*/
 						code.push_back(str);
 
-			}else if(!it->first.compare("PUBLIC")){
-				/* coloca o valor certo na tabela de uso */
-				memOp = token[j+1];
-
-				if(memOp.compare("\n")){
-					if((it = simbTable.find(memOp)) != simbTable.end()){
-
-						if((itMod = defTable.find(memOp)) != defTable.end()){
-							defTable[memOp] = it->second;
-						}
-
-					}
-					else{
-						_erro = TRUE;
-						cout << "ERRO SEMANTICO:" << lineCount << ": Operando invalido: \"" << itOp->first << "\"\n";
-					}
-			}
-			else{
-				_erro = TRUE;
-				cout << "ERRO SINTATICO:" << lineCount << ": Declaração ausente\n";
-			}
-
-			}else if(!it->first.compare("SECTION") || !it->first.compare("EQU")
-					|| !it->first.compare("BEGIN") || !it->first.compare("END")
-					|| !it->first.compare("EXTERN")){
-
-			}
-			/* Diretiva IF */
-			else if(!it->first.compare("IF")){
-				string valor = "";
-				valor = token[j+1];
-
-				/* Se o rotulo existe na tabela de simbolos */
-				if( simbTable.find(valor) != simbTable.end()){
-
-					cout << "ERRO SINTATICO:" << lineCount << ": IF possui argumento inválido: \"" << valor << "\"\n";
-					_erro = TRUE;
-				}
-				else if(!valor.compare("\n")){
-
-					cout << "ERRO SINTATICO:" << lineCount << ": Operando inválido\n";
-					_erro = TRUE;
-				}
-				string::size_type n = j;
-				while (token[n] != "\n")
-				{
-					token[n].erase();
-					n++;
-				}
-				if(!valor.compare("0"))
-				{
-
-					n++;
-					while (token[n] != "\n")
-					{
-						token[n].erase();
-						n++;
-					}
-
-				}
+			}else if(!it->first.compare("SECTION") || !it->first.compare("EQU")){
 
 			}
 
