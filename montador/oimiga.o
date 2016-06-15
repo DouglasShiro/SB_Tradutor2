@@ -1,0 +1,10 @@
+
+	add	eax,  [B] 
+	syscall	input [B] 
+	syscall	input [H] 
+	mov	eax [B] 
+	mul	 [H] 
+	div	 [DOIS] 
+	mov	store [R] 
+	syscall	output [R] 
+	syscall	stop 00 00 00 2 

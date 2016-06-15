@@ -29,27 +29,32 @@ int main(int argc, char **argv)
 
 
 	/* TABELA DE INSTRUCOES */
-	opTable["ADD"] = "01";
-	opTable["SUB"] = "02";
-	opTable["MULT"] = "03";
-	opTable["DIV"] = "04";
-	opTable["JMP"] = "05";
-	opTable["JMPN"] = "06";
-	opTable["JMPP"] = "07";
-	opTable["JMPZ"] = "08";
-	opTable["COPY"] = "09";
-	opTable["LOAD"] = "10";
-	opTable["STORE"] = "11";
-	opTable["INPUT"] = "12";
-	opTable["OUTPUT"] = "13";
-	opTable["STOP"] = "14";
+	opTable["ADD"] 		= "\n\tadd\teax, ";
+	opTable["SUB"] 		= "\n\tsub\teax, ";
+	opTable["MULT"] 	= "\n\tmul\t";
+	opTable["DIV"] 		= "\n\tdiv\t";
+	opTable["JMP"] 		= "\n\tjmp\t";
+	opTable["JMPN"] 	= "\n\tjb\t";
+	opTable["JMPP"] 	= "\n\tja\t";
+	opTable["JMPZ"] 	= "\n\tjz\t";
+	opTable["COPY"] 	= "\n\tmov\tcopy";
+	opTable["LOAD"] 	= "\n\tmov\teax";
+	opTable["STORE"] 	= "\n\tmov\tstore";
+	opTable["INPUT"] 	= "\n\tsyscall\tinput";
+	opTable["OUTPUT"] 	= "\n\tsyscall\toutput";
+	opTable["STOP"] 	= "\n\tsyscall\tstop";
+	/* NOVAS INSTRUCOES */
+	opTable["C_INPUT"] 	= "\n\tcall\tc_input";
+	opTable["C_OUTPUT"] = "\n\tcall\tc_output";
+	opTable["S_INPUT"] 	= "\n\tcall\ts_input";
+	opTable["S_OUTPUT"] = "\n\tcall\ts_output";
 
 	/* TABELA DE DIRETIVAS */
 	dirTable["SECTION"] = 1;
-	dirTable["SPACE"] = 1;
-	dirTable["CONST"] = 1;
-	dirTable["EQU"] = 1;
-	dirTable["IF"] = 1;
+	dirTable["SPACE"] 	= 1;
+	dirTable["CONST"] 	= 1;
+	dirTable["EQU"] 	= 1;
+	dirTable["IF"] 		= 1;
 
 
 	if (argc != 3)
@@ -58,7 +63,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		in = in + ".asm";
+		 in = in + ".asm";
 		inFile.open(in.c_str());	// Abre o arquivo
 		/*  Insere cada linha no vetor string arq */
 		while(getline(inFile,line)){
@@ -94,8 +99,9 @@ int main(int argc, char **argv)
 	/* Realiza a segunda passagem e cria o arquivo de saida */
 	segunda_passagem(opTable, dirTable,  token, simbTable, defTable, useTable, code, relativo);
 
+	// imprime_ia32();
 	/* Printa o programa com as alteracoes */
-		/*for(vector<string>::iterator it = token.begin(); it != token.end(); it++)
+		for(vector<string>::iterator it = token.begin(); it != token.end(); it++)
 	 	cout << *it << " ";
 
 		cout << "\nSIMBOL TABLE\n";
@@ -125,7 +131,7 @@ int main(int argc, char **argv)
 			cout << *it << " ";
 		cout << "\n";
 		cout << "\n";
-		*/
+
 	}
 	/* Caso nao tenha erros gera o codigo objeto */
 	if(_erro == FALSE){
@@ -190,12 +196,9 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 					_erro = TRUE;
 				}
 				else{
-
 					cout << "ERRO SINTATICO:" << lineCount << ": Dois rótulos na mesma linha\n";
 					_erro = TRUE;
-
 				}
-
 			}
 
 			if(token_valido(rotulo)){
@@ -799,8 +802,11 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								_erro = TRUE;
 								cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
 							}
+
+							string auxiliar = "[" + it->first + "]";
 							code.push_back(itOp->second);
-							code.push_back(to_string(it->second + posArray));
+							// code.push_back(to_string(it->second + posArray));
+							code.push_back(auxiliar);
 							cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 							relativo.push_back(posCount+1);
 
