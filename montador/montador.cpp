@@ -11,7 +11,9 @@ int main(int argc, char **argv)
 	string  in(argv[1]);
 	string	out(argv[2]);
 	string line, str, aux;
-	/*ESTRUTURA DE DADOS*/
+	/*
+		ESTRUTURA DE DADOS
+	*/
 	vector<string> arq, token;
 	map<string,int> simbTable;
 	unordered_map<string,int> defTable;
@@ -21,14 +23,18 @@ int main(int argc, char **argv)
 	map<string,int> dirTable;
 	vector<string> code;				/*vetor que ira receber os codigo objeto a ser salvo em arquivo*/
 	vector<int> relativo;
-	/*ITERADORES*/
+	/*
+		ITERADORES
+	*/
 	map<string,int>::iterator it;		/*iterador para tabelas formato string, int*/
 	map<string,string>::iterator itOp;	/*iterador para tabelas formato string, string*/
 	unordered_map<string,int>::iterator itMod;
 	unordered_multimap<string,int>::iterator itUse;
 
 
-	/* TABELA DE INSTRUCOES */
+	/*
+		TABELA DE INSTRUCOES
+	*/
 	opTable["ADD"] 		= "\n\tadd\teax, ";
 	opTable["SUB"] 		= "\n\tsub\teax, ";
 	opTable["MULT"] 	= "\n\tmul\t";
@@ -43,13 +49,17 @@ int main(int argc, char **argv)
 	opTable["INPUT"] 	= "\n\tsyscall\tinput";
 	opTable["OUTPUT"] 	= "\n\tsyscall\toutput";
 	opTable["STOP"] 	= "\n\tsyscall\tstop";
-	/* NOVAS INSTRUCOES */
+	/*
+		NOVAS INSTRUCOES
+	*/
 	opTable["C_INPUT"] 	= "\n\tcall\tc_input";
 	opTable["C_OUTPUT"] = "\n\tcall\tc_output";
 	opTable["S_INPUT"] 	= "\n\tcall\ts_input";
 	opTable["S_OUTPUT"] = "\n\tcall\ts_output";
 
-	/* TABELA DE DIRETIVAS */
+	/*
+		TABELA DE DIRETIVAS
+	*/
 	dirTable["SECTION"] = 1;
 	dirTable["SPACE"] 	= 1;
 	dirTable["CONST"] 	= 1;
@@ -147,7 +157,11 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-/* Verifica se o token nao possui caracteres invalidos */
+/*
+Função: Verificar se o token nao possui caracteres invalidos
+input: token;
+output: boolean;
+*/
 int token_valido(string token)
 {
 	int i = 0;
@@ -168,7 +182,18 @@ int token_valido(string token)
 return true;
 }
 
-/* Primeira Passagem */
+/*
+Função: primeira passagem do algoritmo de duas passagens,
+ 		gerar tabelas de simbolos, definição e uso,
+		Verificação de erros;
+input:	map<string,string> 					&opTable,   //Tabela Operações
+		map<string,int> 					&dirTable,	//Tabela Diretivas
+		map<string,int> 					&simbTable,	//Tabela de Síbolos
+		unordered_map<string, int> 			&defTable,	//Tabela de Definição
+		unordered_multimap<string, int> 	&useTable	//Tabela de Uso
+		vector<string> 						&token,		//Token
+output:	Tabelas simbolos, defiinição e suo preenchidas
+*/
 int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 						vector<string>& token,	map<string,int>& simbTable,
 						unordered_map<string,int>& defTable, unordered_multimap<string,int>& useTable){
@@ -231,7 +256,6 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 		/* Verifica se eh um operacao */
 		else if((itOp = opTable.find(token[j])) != opTable.end()){
 		/* Verifica se a instrucao esta na secao TEXT*/
-
 
 			if((_sectionText > posCount) && (_sectionText != -1))
 			{
@@ -449,7 +473,22 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 	return 0;
 }
 
-/* Segunda Passagem */
+/*
+Função:	Segunda passagem do algoritmo de duas passagens,
+
+input:	map<string,string> 				&opTable,		//Tabela de Operaçôes
+		map<string,int> 				&dirTable,		//Tabela de Diretivas
+		map<string,int> 				&simbTable,		//Tabela de Simbolos
+		unordered_map<string,int> 		&defTable,		//Tabela de Definições
+		unordered_multimap<string,int> 	&useTable,		//Tabela de uso
+		vector<string> 					&token,			//Token
+		vector<string>					&code,			//Sessão de código a ser gravado no arquivo de saída
+		vector<int>						&relativo		//Endereços relativos
+output: Correção endereços relativos,
+		Codigo do arquivo de saída,
+		Tabela global de definições,
+
+ */
 int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						vector<string> &token,	map<string,int> &simbTable,
 						unordered_map<string,int> &defTable, unordered_multimap<string,int> &useTable,
@@ -471,16 +510,25 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 		/*percorre arquivo fonte*/
     for(string::size_type j= 0; j < token.size(); ++j){
         if(token[j].find(":") != string::npos){
-        	/*Verifica ROTULOS*/
+        	/*
+				ROTULOS
+		 	*/
 			/*ignora rotulos*/
         }else if((itOp = opTable.find(token[j])) != opTable.end()){
-            /*verifica OPERACOES*/
+            /*
+				OPERACOES
+			*/
 			if(!itOp->first.compare("STOP")){
+				/*
+					OPERAÇÃO: STOP
+				*/
 				/*se operacao for STOP verifica proximo token para ver se STOP nao possui operandos*/
 				if((it = simbTable.find(token[j+1])) == simbTable.end()){
 					//*se tudo der certo sexta tem mais um show*/
 					posCount += 1;
-					/*ARQUIVO SAIDA*/
+					/*
+						ARQUIVO SAIDA: STOP
+					*/
 					code.push_back(itOp->second);
 
 				}else{
@@ -550,7 +598,9 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 
 					}
 
-				/* OPERACAO COPY */
+				/*
+					OPERACAO: COPY
+				*/
 				if(!itOp->first.compare("COPY")){
 					memOp = token[j+1]; /*Operando 1*/
 
@@ -604,6 +654,9 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 										/*se tudo der certo sexta tem mais um show*/
 										/*ARQUIVO SAIDA*/
 										/*salva OP CODE e end dos simbolos dos operandos de COPY*/
+										/*
+											ARQUIVO SAIDA: COPY ARRAY, ARRAY
+										*/
 										code.push_back(itOp->second);
 										code.push_back(to_string(auxCode + posArray));
 										code.push_back(to_string(it->second + posArray2));
@@ -635,6 +688,9 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									/*se tudo der certo sexta tem mais um show*/
 									/*ARQUIVO SAIDA*/
 									/*salva OP CODE e end dos simbolos dos operandos de COPY*/
+									/*
+										ARQUIVO SAIDA: COPY ARRAY, MEM[OP2]
+									*/
 									code.push_back(itOp->second);
 									code.push_back(to_string(auxCode));
 									code.push_back(to_string(it->second));
@@ -702,9 +758,10 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 											}
 										}
 										posArray2 = stoi(token[j+4]);
-										/*se tudo der certo sexta tem mais um show*/
-										/*ARQUIVO SAIDA*/
 										/*salva OP CODE e end dos simbolos dos operandos de COPY*/
+										/*
+											ARQUIVO SAIDA: COPY MEM[OP1], ARRAY
+										*/
 										code.push_back(itOp->second);
 										code.push_back(to_string(auxCode + posArray));
 										code.push_back(to_string(it->second + posArray2));
@@ -734,9 +791,11 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 
 									}
 
-									/*se tudo der certo sexta tem mais um show*/
 									/*ARQUIVO SAIDA*/
 									/*salva OP CODE e end dos simbolos dos operandos de COPY*/
+									/*
+										ARQUIVO SAIDA: COPY MEM[OP1], MEM[OP2]
+									*/
 									code.push_back(itOp->second);
 									code.push_back(to_string(auxCode));
 									code.push_back(to_string(it->second));
@@ -763,7 +822,9 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							_erro = TRUE;
 							cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
 						}
-
+						/*
+							ARQUIVO SAIDA: JMP'S
+						*/
 						code.push_back(itOp->second);
 						code.push_back(to_string(it->second));
 						relativo.push_back(posCount+1);
@@ -778,7 +839,9 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							strAux[memOp.size()] = '\0'; //finaliza string com '\0'
 
 							useTable.insert(make_pair<string,int>(strAux, (posCount+1)));
-							/*ARQUIVO SAIDA*/
+							/*
+								ARQUIVO SAIDA: JMP'S EXTERN
+							*/
 							code.push_back(itOp->second);
 							code.push_back(to_string(it->second + posArray));
 							relativo.push_back(posCount+1);
@@ -806,6 +869,10 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							string auxiliar = "[" + it->first + "]";
 							code.push_back(itOp->second);
 							// code.push_back(to_string(it->second + posArray));
+							/*
+								ARQUIVO SAIDA:  ADD, SUB, MULT, DIV, LOAD, STORE, INPUT, OUTPUT
+												C_INPUT, C_OUTPUT, S_INPUT, S_OUTPUT
+							*/
 							code.push_back(auxiliar);
 							cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 							relativo.push_back(posCount+1);
@@ -820,7 +887,11 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								strAux[memOp.size()] = '\0'; //finaliza string com '\0'
 
 								useTable.insert(make_pair<string,int>(strAux, (posCount+1)));
-								/*ARQUIVO SAIDA*/
+								/*EXTERN*/
+								/*
+									ARQUIVO SAIDA:  ADD, SUB, MULT, DIV, LOAD, STORE, INPUT, OUTPUT
+													C_INPUT, C_OUTPUT, S_INPUT, S_OUTPUT
+								*/
 								code.push_back(itOp->second);
 								code.push_back(to_string(it->second + posArray));
 								relativo.push_back(posCount+1);
@@ -857,7 +928,9 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 					{
 
 						space--;
-						/*Arquivo Saida*/
+						/*
+							ARQUIVO SAIDA: SPACE NUM_ESPAÇOS_ALOCADOS
+						*/
 						code.push_back("00");
 						posCount+= 1;
 					}
@@ -869,7 +942,9 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 			}else if(!it->first.compare("CONST")){
 						str = token[j+1];
 						posCount+= 1;
-						/*Arquivo Saida*/
+						/*
+							ARQUIVO SAIDA:  CONST DEFINITION
+						*/
 						code.push_back(str);
 
 			}else if(!it->first.compare("SECTION") || !it->first.compare("EQU")){
