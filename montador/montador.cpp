@@ -338,8 +338,11 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 				}
 
 				/* Verifica se eh hexadecimal*/
-				if(!str.compare(0,2,"0X")){
+
+				/*	cout << "\nSTRING => |" + str +"|\n";
+				if(b  cvx!str.compare("0X0")){
 					i = 2;
+					cout << "\né sim->"+ str << endl;
 				}else if (!str.compare(0,3,"-0X")){
 					i = 3;
 				}
@@ -354,7 +357,7 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 						i = str.length();
 					}
 
-				}
+				}*/
 
 				posCount+= 1;
 			}
