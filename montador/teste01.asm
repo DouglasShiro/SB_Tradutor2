@@ -10,13 +10,13 @@ sub B
 store r_sub
 load A
 mult B
-store r_mult
+store r_mul
 load A
 div B
 store r_div
 output r_add
 output r_sub
-output r_mult
+output r_mul
 output r_div
 
 section data
@@ -24,7 +24,7 @@ A: space
 B: space
 R_add: space
 R_sub: space
-R_mult: space
+R_mul: space
 R_div: space
 
 

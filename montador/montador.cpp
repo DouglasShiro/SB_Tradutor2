@@ -35,8 +35,8 @@ int main(int argc, char **argv)
 	/*
 		TABELA DE INSTRUCOES
 	*/
-	opTable["ADD"] 		= "\n\tadd\teax, ";
-	opTable["SUB"] 		= "\n\tsub\teax, ";
+	opTable["ADD"] 		= "\n\tadd\teax,";
+	opTable["SUB"] 		= "\n\tsub\teax,";
 
 	opTable["MULT"] 	= "\n\tmul\t";
 	opTable["DIV"] 		= "\n\tdiv\t";
@@ -46,13 +46,14 @@ int main(int argc, char **argv)
 	opTable["JMPP"] 	= "\n\tja\t";
 	opTable["JMPZ"] 	= "\n\tjz\t";
 
-	opTable["COPY"] 	= "\n\tmov\teax, ";
+	opTable["COPY"] 	= "\n\tmov\teax,";
 
-	opTable["LOAD"] 	= "\n\tmov\tload";
-	opTable["STORE"] 	= "\n\tmov\tstore";
+	opTable["LOAD"] 	= "\n\tmov\teax,";
+	opTable["STORE"] 	= "\n\tmov\t";
 
-	opTable["INPUT"] 	= "\n\tsyscall\tinput";
-	opTable["OUTPUT"] 	= "\n\tsyscall\toutput";
+	opTable["INPUT"] 	= "\n\tpush\teax\n\tmov\teax, 4\n\tmov\tebx, 1";
+
+	opTable["OUTPUT"] 	= "\n\tpush\teax\n\tmov\teax, 3\n\tmov\tebx, 0";
 
 	opTable["STOP"] 	= "\n\tsyscall\tstop";
 	/*
@@ -915,8 +916,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						/*Caso o proximo token seja um simbolo entao a operacao esta com os operandos corretos*/
 						if((it = simbTable.find(memOp)) != simbTable.end()){
 							/*ARQUIVO SAIDA*/
-							if(it->second < _sectionData)
-							{
+							if(it->second < _sectionData){
 								_erro = TRUE;
 								cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
 							}
@@ -973,6 +973,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								string auxiliar = "[" + it->first + "]";
 								code.push_back(itOp->second);
 								code.push_back(auxiliar);
+								code.push_back(", eax");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("INPUT")){
@@ -981,7 +982,10 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								*/
 								string auxiliar = "[" + it->first + "]";
 								code.push_back(itOp->second);
+								code.push_back("\n\tmov\tecx,");
 								code.push_back(auxiliar);
+								code.push_back("\n\tmov\tedx, 4");
+								code.push_back("\n\tpop\teax");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("OUTPUT")){
@@ -990,7 +994,10 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								*/
 								string auxiliar = "[" + it->first + "]";
 								code.push_back(itOp->second);
+								code.push_back("\n\tmov\tecx,");
 								code.push_back(auxiliar);
+								code.push_back("\n\tmov\tedx, 4");
+								code.push_back("\n\tpop\teax");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}
