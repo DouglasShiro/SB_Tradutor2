@@ -35,34 +35,27 @@ int main(int argc, char **argv)
 	/*
 		TABELA DE INSTRUCOES
 	*/
-	opTable["ADD"] 		= "\n\tadd\teax,";
-	opTable["SUB"] 		= "\n\tsub\teax,";
-
-	opTable["MULT"] 	= "\n\tmul\t";
-	opTable["DIV"] 		= "\n\tdiv\t";
-
-	opTable["JMP"] 		= "\n\tjmp\t";
-	opTable["JMPN"] 	= "\n\tjb\t";
-	opTable["JMPP"] 	= "\n\tja\t";
-	opTable["JMPZ"] 	= "\n\tjz\t";
-
-	opTable["COPY"] 	= "\n\tmov\teax,";
-
-	opTable["LOAD"] 	= "\n\tmov\teax,";
-	opTable["STORE"] 	= "\n\tmov\t";
-
-	opTable["INPUT"] 	= "\n\tpush\teax\n\tmov\teax, 4\n\tmov\tebx, 1";
-
-	opTable["OUTPUT"] 	= "\n\tpush\teax\n\tmov\teax, 3\n\tmov\tebx, 0";
-
-	opTable["STOP"] 	= "\n\tsyscall\tstop";
+	opTable["ADD"] = "01";
+	opTable["SUB"] = "02";
+	opTable["MULT"] = "03";
+	opTable["DIV"] = "04";
+	opTable["JMP"] = "05";
+	opTable["JMPN"] = "06";
+	opTable["JMPP"] = "07";
+	opTable["JMPZ"] = "08";
+	opTable["COPY"] = "09";
+	opTable["LOAD"] = "10";
+	opTable["STORE"] = "11";
+	opTable["INPUT"] = "12";
+	opTable["OUTPUT"] = "13";
+	opTable["STOP"] = "14";
 	/*
 		NOVAS INSTRUCOES
 	*/
-	opTable["C_INPUT"] 	= "\n\tcall\tc_input";
-	opTable["C_OUTPUT"] = "\n\tcall\tc_output";
-	opTable["S_INPUT"] 	= "\n\tcall\ts_input";
-	opTable["S_OUTPUT"] = "\n\tcall\ts_output";
+	opTable["C_INPUT"] 	= "15";
+	opTable["C_OUTPUT"] = "16";
+	opTable["S_INPUT"] 	= "17";
+	opTable["S_OUTPUT"] = "18";
 
 	/*
 		TABELA DE DIRETIVAS
@@ -515,38 +508,16 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 		unordered_map<string,int>::iterator itMod;
 		unordered_multimap<string,int>::iterator itUse;
 
-		/*
-			CABEÇALHO
-		*/
-		//code.push_back("\n%define CONST\tVALOR"); // declaração de const's
-		code.push_back("\nglobal _start");
-
-		/*
-			SECTION DATA
-		*/
-		code.push_back("\nsection .data");
-			//MSG'S ??
-			//SPACE
-			//EQU
-		for (auto it = std::begin(simbTable); it!=std::end(simbTable); ++it){
-			code.push_back("\n");
-			code.push_back(it->first);
-			code.push_back("\tresw 1");
-		}
-
-		/*
-			SECTION TEXT
-		*/
-		code.push_back("\nsection .text");
-		code.push_back("\n_start:");
-
 		/*percorre arquivo fonte*/
     for(string::size_type j= 0; j < token.size(); ++j){
         if(token[j].find(":") != string::npos){
-        	/*
-				ROTULOS
-		 	*/
-			/*ignora rotulos*/
+			/* Eh um rotulo da section data */
+			if(!token[j+1].compare("CONST") || !token[j+1].compare("SPACE")){
+				string rotulo = token[j].substr(0, token[j].length()-1);
+				code.push_back("\n" + rotulo);
+			}else{ /* Eh um rotulo da section text */
+				code.push_back("\n" + token[j]);
+			}
         }else if((itOp = opTable.find(token[j])) != opTable.end()){
             /*
 				OPERACOES
@@ -886,27 +857,6 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						relativo.push_back(posCount+1);
 
 						posCount += 2;
-					}else{
-						str = memOp + "#";
-						if((it = simbTable.find(str)) != simbTable.end()){
-							/*Atualiza tabela de USO*/
-							char * strAux = new char[memOp.size() + 1];
-							copy(memOp.begin(), memOp.end(), strAux);
-							strAux[memOp.size()] = '\0'; //finaliza string com '\0'
-
-							useTable.insert(make_pair<string,int>(strAux, (posCount+1)));
-							/*
-								ARQUIVO SAIDA: JMP'S EXTERN
-							*/
-							code.push_back(itOp->second);
-							code.push_back(to_string(it->second + posArray));
-							relativo.push_back(posCount+1);
-							posCount += 2;
-							delete[] strAux;
-						}else{
-							_erro = TRUE;
-							cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
-						}
 					}
 				}
 				 else {
@@ -925,107 +875,80 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  ADD [CONST]/[SPACE 1]
 								*/
-								string auxiliar = "[" + it->first + "]";
-								code.push_back(itOp->second);
-								code.push_back(auxiliar);
+								code.push_back("\n\tmov	esi, " + to_string(posArray));
+								code.push_back("\n\tadd	eax, [" + it->first + " + ESI*2]");
+								code.push_back("\n\tadd	eax, [" + it->first + "]");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("SUB")){
 								/*
 									ARQUIVO SAIDA:	SUB [CONST]/[SPACE 1]
 								*/
-								string auxiliar = "[" + it->first + "]";
-								code.push_back(itOp->second);
-								code.push_back(auxiliar);
+								code.push_back("\n\tmov	esi, " + to_string(posArray));
+								code.push_back("\n\tsub	eax, [" + it->first + " + ESI*2]");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("MULT")){
 								/*
 									ARQUIVO SAIDA:  MULT [CONST]/[SPACE 1]
 								*/
-								string auxiliar = "[" + it->first + "]";
-								code.push_back(itOp->second);
-								code.push_back(auxiliar);
+								code.push_back("\n\tmov	esi, " + to_string(posArray));
+								code.push_back("\n\tmul	[" + it->first + " + ESI*2]");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("DIV")){
 								/*
 									ARQUIVO SAIDA:  DIV [CONST]/[SPACE 1]
 								*/
-								string auxiliar = "[" + it->first + "]";
-								code.push_back(itOp->second);
-								code.push_back(auxiliar);
+								code.push_back("\n\tmov	esi, " + to_string(posArray));
+								code.push_back("\n\tdiv	[" + it->first + " + ESI*2]");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("LOAD")){
 								/*
 									ARQUIVO SAIDA:  LOAD
 								*/
-								string auxiliar = "[" + it->first + "]";
-								code.push_back(itOp->second);
-								code.push_back(auxiliar);
+								code.push_back("\n\tmov	esi, " + to_string(posArray));
+								code.push_back("\n\tmov	eax, [" + it->first + " + ESI*2]");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("STORE")){
 								/*
 									ARQUIVO SAIDA:  STORE
 								*/
-								string auxiliar = "[" + it->first + "]";
-								code.push_back(itOp->second);
-								code.push_back(auxiliar);
-								code.push_back(", eax");
+								code.push_back("\n\tmov	esi, " + to_string(posArray));
+								code.push_back("\n\tmov	[" + it->first + " + ESI*2], eax");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("INPUT")){
 								/*
 									ARQUIVO SAIDA:  INPUT
 								*/
-								string auxiliar = "[" + it->first + "]";
-								code.push_back(itOp->second);
-								code.push_back("\n\tmov\tecx,");
-								code.push_back(auxiliar);
-								code.push_back("\n\tmov\tedx, 4");
-								code.push_back("\n\tpop\teax");
+								code.push_back("\n\tmov	esi, " + to_string(posArray));
+								code.push_back("\n\tpush	eax");
+								code.push_back("\n\tmov	eax, 4");
+								code.push_back("\n\tmov	ebx, 1");
+								code.push_back("\n\tmov	ecx, [" + it->first + " + ESI*2]");
+								code.push_back("\n\tmov	edx, 4");
+								code.push_back("\n\tpop	eax");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("OUTPUT")){
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
-								string auxiliar = "[" + it->first + "]";
-								code.push_back(itOp->second);
-								code.push_back("\n\tmov\tecx,");
-								code.push_back(auxiliar);
-								code.push_back("\n\tmov\tedx, 4");
-								code.push_back("\n\tpop\teax");
+								code.push_back("\n\tmov	esi, " + to_string(posArray));
+								code.push_back("\n\tpush	eax");
+								code.push_back("\n\tmov	eax, 3");
+								code.push_back("\n\tmov	ebx, 0");
+								code.push_back("\n\tmov	ecx, [" + it->first + " + ESI*2]");
+								code.push_back("\n\tmov	edx, 4");
+								code.push_back("\n\tpop	eax");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}
 
 							posCount += 2;
-						}else{
-							str = memOp + "#";
-							if((it = simbTable.find(str)) != simbTable.end()){
-								/*Atualiza tabela de USO*/
-								char * strAux = new char[memOp.size() + 1];
-								copy(memOp.begin(), memOp.end(), strAux);
-								strAux[memOp.size()] = '\0'; //finaliza string com '\0'
-
-								useTable.insert(make_pair<string,int>(strAux, (posCount+1)));
-								/*EXTERN*/
-								/*
-									ARQUIVO SAIDA:  ADD, SUB, MULT, DIV, LOAD, STORE, INPUT, OUTPUT
-													C_INPUT, C_OUTPUT, S_INPUT, S_OUTPUT
-								*/
-								code.push_back(itOp->second);
-								code.push_back(to_string(it->second + posArray));
-								relativo.push_back(posCount+1);
-								posCount += 2;
-								delete[] strAux;
-							}else{
-								_erro = TRUE;
-								cout << "ERRO SINTATICO:" << lineCount << ": Operando invalido: :\"" << memOp << "\"\n";
-							}
 						}
 					}else{
 						_erro = TRUE;
@@ -1049,9 +972,11 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						space = space *10 + (c -'0');
 					}
 					/* salva no vetor 00 space vezes*/
+					code.push_back("\tdw\t0");
+					space--;
 					while(space > 0)
 					{
-
+						code.push_back(", 0");
 						space--;
 						/*
 							ARQUIVO SAIDA: SPACE NUM_ESPAÇOS_ALOCADOS
@@ -1070,9 +995,20 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						/*
 							ARQUIVO SAIDA:  CONST DEFINITION
 						*/
-						code.push_back(str);
+						code.push_back("\tEQU\t" + str);
 
-			}else if(!it->first.compare("SECTION") || !it->first.compare("EQU")){
+			}else if(!it->first.compare("SECTION")){
+				if(!token[j+1].compare("DATA"))
+				{
+					code.push_back("\n\nsection .data");
+
+				}else if(!token[j+1].compare("TEXT")){
+					code.push_back("\nglobal _start");
+					code.push_back("\nsection .text");
+					code.push_back("\n_start:");
+				}
+
+			}else if(!it->first.compare("EQU")){
 
 			}
 
