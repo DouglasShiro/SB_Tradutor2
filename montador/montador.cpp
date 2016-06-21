@@ -37,17 +37,23 @@ int main(int argc, char **argv)
 	*/
 	opTable["ADD"] 		= "\n\tadd\teax, ";
 	opTable["SUB"] 		= "\n\tsub\teax, ";
+
 	opTable["MULT"] 	= "\n\tmul\t";
 	opTable["DIV"] 		= "\n\tdiv\t";
+
 	opTable["JMP"] 		= "\n\tjmp\t";
 	opTable["JMPN"] 	= "\n\tjb\t";
 	opTable["JMPP"] 	= "\n\tja\t";
 	opTable["JMPZ"] 	= "\n\tjz\t";
-	opTable["COPY"] 	= "\n\tmov\tcopy";
-	opTable["LOAD"] 	= "\n\tmov\teax";
+
+	opTable["COPY"] 	= "\n\tmov\teax, ";
+
+	opTable["LOAD"] 	= "\n\tmov\tload";
 	opTable["STORE"] 	= "\n\tmov\tstore";
+
 	opTable["INPUT"] 	= "\n\tsyscall\tinput";
 	opTable["OUTPUT"] 	= "\n\tsyscall\toutput";
+
 	opTable["STOP"] 	= "\n\tsyscall\tstop";
 	/*
 		NOVAS INSTRUCOES
@@ -73,7 +79,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		 in = in + ".asm";
+		//in = in + ".asm";
 		inFile.open(in.c_str());	// Abre o arquivo
 		/*  Insere cada linha no vetor string arq */
 		while(getline(inFile,line)){
@@ -145,7 +151,8 @@ int main(int argc, char **argv)
 	}
 	/* Caso nao tenha erros gera o codigo objeto */
 	if(_erro == FALSE){
-		out = out + ".o";
+		//out = out + ".o";
+		out = out + ".s";
 		outFile.open(out, fstream::out);	// Abre o arquivo
 
 		for(vector<string>::iterator it = code.begin(); it != code.end(); it++)
@@ -507,6 +514,31 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 		unordered_map<string,int>::iterator itMod;
 		unordered_multimap<string,int>::iterator itUse;
 
+		/*
+			CABEÇALHO
+		*/
+		//code.push_back("\n%define CONST\tVALOR"); // declaração de const's
+		code.push_back("\nglobal _start");
+
+		/*
+			SECTION DATA
+		*/
+		code.push_back("\nsection .data");
+			//MSG'S ??
+			//SPACE
+			//EQU
+		for (auto it = std::begin(simbTable); it!=std::end(simbTable); ++it){
+			code.push_back("\n");
+			code.push_back(it->first);
+			code.push_back("\tresw 1");
+		}
+
+		/*
+			SECTION TEXT
+		*/
+		code.push_back("\nsection .text");
+		code.push_back("\n_start:");
+
 		/*percorre arquivo fonte*/
     for(string::size_type j= 0; j < token.size(); ++j){
         if(token[j].find(":") != string::npos){
@@ -529,7 +561,10 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 					/*
 						ARQUIVO SAIDA: STOP
 					*/
-					code.push_back(itOp->second);
+					//code.push_back(itOp->second);
+					code.push_back("\n\tmov eax, 1");
+					code.push_back("\n\tmov ebx, 0");
+					code.push_back("\n\tint 80h");
 
 				}else{
 					cout << "ERRO SINTATICO:" << lineCount << ": Formato inválido: STOP \n";
@@ -656,10 +691,18 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 										/*salva OP CODE e end dos simbolos dos operandos de COPY*/
 										/*
 											ARQUIVO SAIDA: COPY ARRAY, ARRAY
+											mov eax, [LABEL+ESI*2]
+											mov [LABEL2+ESI*2], eax
 										*/
 										code.push_back(itOp->second);
-										code.push_back(to_string(auxCode + posArray));
-										code.push_back(to_string(it->second + posArray2));
+										//code.push_back(to_string(auxCode + posArray));
+										string auxiliar = "[" + it->first + "],";
+										//code.push_back(to_string(it->second + posArray2));
+										auxiliar = "[" + it->first + "], "; //Verificar qual it pegar
+										code.push_back("\n\tmov\t");
+										code.push_back(auxiliar);
+										code.push_back("eax");
+
 										relativo.push_back(posCount+1);
 										relativo.push_back(posCount+2);
 
@@ -690,6 +733,8 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									/*salva OP CODE e end dos simbolos dos operandos de COPY*/
 									/*
 										ARQUIVO SAIDA: COPY ARRAY, MEM[OP2]
+										mov eax, [LABEL]
+										mov [LABEL2+ESI*2], eax
 									*/
 									code.push_back(itOp->second);
 									code.push_back(to_string(auxCode));
@@ -761,10 +806,14 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 										/*salva OP CODE e end dos simbolos dos operandos de COPY*/
 										/*
 											ARQUIVO SAIDA: COPY MEM[OP1], ARRAY
+											mov eax, [LABEL2+ESI*2]
+											mov [LABEL], eax
 										*/
 										code.push_back(itOp->second);
-										code.push_back(to_string(auxCode + posArray));
-										code.push_back(to_string(it->second + posArray2));
+										string auxiliar = "[" + it->first + "]";
+										code.push_back(auxiliar);
+										//code.push_back(to_string(auxCode + posArray));
+										//code.push_back(to_string(it->second + posArray2));
 										relativo.push_back(posCount+1);
 										relativo.push_back(posCount+2);
 
@@ -795,13 +844,18 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									/*salva OP CODE e end dos simbolos dos operandos de COPY*/
 									/*
 										ARQUIVO SAIDA: COPY MEM[OP1], MEM[OP2]
+										mov eax, [LABEL]
+										mov [LABEL2], eax
 									*/
-									code.push_back(itOp->second);
-									code.push_back(to_string(auxCode));
-									code.push_back(to_string(it->second));
+									code.push_back("\n\tmov\t");
+									//code.push_back(itOp->second);
+									string auxiliar = "[" + it->first + "], ";
+									code.push_back(auxiliar);
+									//code.push_back(to_string(auxCode));
+									//code.push_back(to_string(it->second));
 									relativo.push_back(posCount+1);
 									relativo.push_back(posCount+2);
-
+									code.push_back("eax");
 									posCount += 3;
 
 								}else{
@@ -826,7 +880,8 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							ARQUIVO SAIDA: JMP'S
 						*/
 						code.push_back(itOp->second);
-						code.push_back(to_string(it->second));
+						//code.push_back(to_string(it->second));
+						code.push_back(it->first);
 						relativo.push_back(posCount+1);
 
 						posCount += 2;
@@ -866,16 +921,79 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
 							}
 
-							string auxiliar = "[" + it->first + "]";
-							code.push_back(itOp->second);
-							// code.push_back(to_string(it->second + posArray));
-							/*
-								ARQUIVO SAIDA:  ADD, SUB, MULT, DIV, LOAD, STORE, INPUT, OUTPUT
-												C_INPUT, C_OUTPUT, S_INPUT, S_OUTPUT
-							*/
-							code.push_back(auxiliar);
-							cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
-							relativo.push_back(posCount+1);
+							if(!itOp->first.compare("ADD")){
+								/*
+									ARQUIVO SAIDA:  ADD [CONST]/[SPACE 1]
+								*/
+								string auxiliar = "[" + it->first + "]";
+								code.push_back(itOp->second);
+								code.push_back(auxiliar);
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("SUB")){
+								/*
+									ARQUIVO SAIDA:	SUB [CONST]/[SPACE 1]
+								*/
+								string auxiliar = "[" + it->first + "]";
+								code.push_back(itOp->second);
+								code.push_back(auxiliar);
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("MULT")){
+								/*
+									ARQUIVO SAIDA:  MULT [CONST]/[SPACE 1]
+								*/
+								string auxiliar = "[" + it->first + "]";
+								code.push_back(itOp->second);
+								code.push_back(auxiliar);
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("DIV")){
+								/*
+									ARQUIVO SAIDA:  DIV [CONST]/[SPACE 1]
+								*/
+								string auxiliar = "[" + it->first + "]";
+								code.push_back(itOp->second);
+								code.push_back(auxiliar);
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("LOAD")){
+								/*
+									ARQUIVO SAIDA:  LOAD
+								*/
+								string auxiliar = "[" + it->first + "]";
+								code.push_back(itOp->second);
+								code.push_back(auxiliar);
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("STORE")){
+								/*
+									ARQUIVO SAIDA:  STORE
+								*/
+								string auxiliar = "[" + it->first + "]";
+								code.push_back(itOp->second);
+								code.push_back(auxiliar);
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("INPUT")){
+								/*
+									ARQUIVO SAIDA:  INPUT
+								*/
+								string auxiliar = "[" + it->first + "]";
+								code.push_back(itOp->second);
+								code.push_back(auxiliar);
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("OUTPUT")){
+								/*
+									ARQUIVO SAIDA:  OUTPUT
+								*/
+								string auxiliar = "[" + it->first + "]";
+								code.push_back(itOp->second);
+								code.push_back(auxiliar);
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}
 
 							posCount += 2;
 						}else{
@@ -931,7 +1049,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						/*
 							ARQUIVO SAIDA: SPACE NUM_ESPAÇOS_ALOCADOS
 						*/
-						code.push_back("00");
+						//code.push_back("00");
 						posCount+= 1;
 					}
 
@@ -956,5 +1074,12 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 			lineCount++;
 		}
     }
+
 return 0;
 }
+
+
+/*
+	INTERRUPCOES DO SISTEMA
+*/
+/*	INPUT, OUTPUT, C_INPUT, C_OUTPUT, S_INPUT, S_OUTPUT*/
