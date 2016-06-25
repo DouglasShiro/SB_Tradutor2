@@ -22,4 +22,4 @@ done:
     int 80h
 
 section .data
-    char db "0"
+    char db 0
