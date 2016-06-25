@@ -144,17 +144,17 @@ int main(int argc, char **argv)
 
 	}
 	/* Caso nao tenha erros gera o codigo objeto */
-	if(_erro == FALSE){
-		//out = out + ".o";
-		out = out + ".s";
-		outFile.open(out, fstream::out);	// Abre o arquivo
+//	if(_erro == FALSE){
+	//out = out + ".o";
+	out = out + ".s";
+	outFile.open(out, fstream::out);	// Abre o arquivo
 
-		for(vector<string>::iterator it = code.begin(); it != code.end(); it++)
-				outFile << *it << " ";
+	for(vector<string>::iterator it = code.begin(); it != code.end(); it++)
+			outFile << *it << " ";
 
-		/*FECHA ARQUIVO SAIDA*/
-		outFile.close();
-	}
+	/*FECHA ARQUIVO SAIDA*/
+	outFile.close();
+//	}
 	return 0;
 }
 
@@ -928,12 +928,12 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									ARQUIVO SAIDA:  INPUT
 								*/
 								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tpush	eax");
+								code.push_back("\n\tpusha");
 								code.push_back("\n\tmov	eax, 4");
 								code.push_back("\n\tmov	ebx, 1");
 								code.push_back("\n\tmov	ecx, [" + it->first + " + ESI*2]");
 								code.push_back("\n\tmov	edx, 4");
-								code.push_back("\n\tpop	eax");
+								code.push_back("\n\tpopa");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("OUTPUT")){
@@ -941,12 +941,12 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									ARQUIVO SAIDA:  OUTPUT
 								*/
 								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tpush	eax");
+								code.push_back("\n\tpusha");
 								code.push_back("\n\tmov	eax, 3");
 								code.push_back("\n\tmov	ebx, 0");
-								code.push_back("\n\tmov	ecx, [" + it->first + " + ESI*2]");
+								code.push_back("\n\tmov	ecx, [" + it->first + " + ESI*4]");
 								code.push_back("\n\tmov	edx, 4");
-								code.push_back("\n\tpop	eax");
+								code.push_back("\n\tpopa");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}

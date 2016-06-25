@@ -1,4 +1,4 @@
-; comentário
+; comentï¿½rio
 FLAG: EQU 1
 
 SECTION TEXT
@@ -8,13 +8,13 @@ SECTION TEXT
 		LOAD		B
 		MULT		H
 		IF FLAG
-		DIV		DOIS
+		DIV			DOIS
 		STORE		R
-		OUTPUT	R
+		OUTPUT		R
 		STOP
 
 SECTION DATA
-	B:		SPACE 1 
+	B:		SPACE 1
 	H:		SPACE 1
 	R:		SPACE 1
-	DOIS:	CONST		2
+	DOIS:	CONST 2

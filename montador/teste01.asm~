@@ -16,7 +16,7 @@ div B
 store r_div
 output r_add
 output r_sub
-output r_mult
+output r_mul
 output r_div
 
 section data

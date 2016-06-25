@@ -20,12 +20,12 @@ output r_mul
 output r_div
 
 section data
-A: space
-B: space
-R_add: space
-R_sub: space
-R_mul: space
-R_div: space
+A: space 1
+B: space 1
+R_add: space 1
+R_sub: space 1
+R_mul: space 1
+R_div: space 1
 
 
 
