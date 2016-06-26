@@ -16,6 +16,7 @@ int main(int argc, char **argv)
 	*/
 	vector<string> arq, token;
 	map<string,int> simbTable;
+	map<string,int> constTable;
 	unordered_map<string,int> defTable;
 	unordered_multimap<string,int> useTable;
 	unordered_multimap<string,int> reverso;
@@ -104,10 +105,10 @@ int main(int argc, char **argv)
 
 	/* Programa ja foi pre processado */
 	/* Realiza a primeira passagem e verifica alguns erros de diretivas e definicoes */
-	primeira_passagem(opTable, dirTable,  token, simbTable, defTable, useTable);
+	primeira_passagem(opTable, dirTable,  token, simbTable, defTable, useTable, constTable);
 
 	/* Realiza a segunda passagem e cria o arquivo de saida */
-	segunda_passagem(opTable, dirTable,  token, simbTable, defTable, useTable, code, relativo);
+	segunda_passagem(opTable, dirTable,  token, simbTable, defTable, useTable, code, relativo, constTable);
 
 	// imprime_ia32();
 	/* Printa o programa com as alteracoes */
@@ -135,6 +136,12 @@ int main(int argc, char **argv)
 			cout << *it << " ";
 		cout << "\n";
 		cout<< "\n";
+
+		cout << "\nCONST TABLE\n";
+		for (it=constTable.begin(); it != constTable.end(); ++it)
+			cout << it->first << "\t" << it->second<<"\n";
+		cout << "\n";
+
 
 		cout << "CODE\n";
 		for(vector<string>::iterator it = code.begin(); it != code.end(); it++)
@@ -197,7 +204,8 @@ output:	Tabelas simbolos, defiinição e suo preenchidas
 */
 int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 						vector<string>& token,	map<string,int>& simbTable,
-						unordered_map<string,int>& defTable, unordered_multimap<string,int>& useTable){
+						unordered_map<string,int>& defTable, unordered_multimap<string,int>& useTable,
+						map<string,int>&constTable){
 
 	char c;
 	int existe = 0,  posCount = 0, lineCount = 1, temData = FALSE;
@@ -238,7 +246,8 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 					else{
 						cout << "ERRO SEMANTICO:" << lineCount << ": Rótulo repetido\n";
 						_erro = TRUE;
-					}				}
+					}
+				}
 				else if(existe == 0){
 					simbTable[rotulo] = posCount;
 				}
@@ -327,7 +336,7 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 			}
 			/* Diretiva CONST */
 			else if(!it->first.compare("CONST")){
-				str = token[++j];
+				str = token[j-1];
 				temData = TRUE;
 				string::size_type i = 0;
 
@@ -337,6 +346,9 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 						_erro = TRUE;
 				}
 
+				posCount+= 1;
+				str = str.substr(0, str.length()-1);
+				constTable[str] = posCount;
 
 				/* Verifica se eh hexadecimal*/
 
@@ -360,7 +372,8 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 
 				}*/
 
-				posCount+= 1;
+
+
 			}
 			/* Diretiva EQU */
 			else if(!it->first.compare("EQU")){
@@ -497,18 +510,19 @@ output: Correção endereços relativos,
 int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						vector<string> &token,	map<string,int> &simbTable,
 						unordered_map<string,int> &defTable, unordered_multimap<string,int> &useTable,
-						vector<string>&code, vector<int>&relativo){
+						vector<string>&code, vector<int>&relativo, map<string,int>&constTable){
 
 		string memOp, memOp2; 				/*Operandos para operacoes*/
 		string str;							/*string auxiliar*/
 		string end;							/*string auxiliar para salvar endereco das operacoes e operandos*/
 		string opCode;						/*string auxiliar para salvar o op code das operacoes*/
-		string auxOP;                       /* string auxiliar para salvar o label do operando 1 na funcao COPY */
+		string auxOP, operando;                       /* string auxiliar para salvar o label do operando 1 na funcao COPY */
 		char c;								/*char auxiliar*/
 		int posCount = 0, lineCount = 1;
 		int space = 0, posArray = 0, posArray2 = 0;						/*int para receber valor da diretiva SPACE*/
 		//int auxCode;
 		map<string,int>::iterator it;		/*iterador para tabelas formato string, int*/
+		map<string,int>::iterator itConst;
 		map<string,string>::iterator itOp;	/*iterador para tabelas formato string, string*/
 		unordered_map<string,int>::iterator itMod;
 		unordered_multimap<string,int>::iterator itUse;
@@ -757,7 +771,12 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 
 
 							/* Label do Operando 1*/
-							auxOP = it->first;
+							if(constTable.find(memOp) != constTable.end()){
+								auxOP = it->first;
+
+							}else{
+								auxOP = "[" + it->first + "]";
+							}
 
 							}
 							else{
@@ -810,7 +829,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 
 										code.push_back("\n\tpush\teax");
 										code.push_back("\n\tmov\tesi, "+ to_string(posArray));
-										code.push_back("\n\tmov\teax, [" + auxOP + "]");
+										code.push_back("\n\tmov\teax, " + auxOP );
 										code.push_back("\n\tmov\tesi, "+ to_string(posArray2));
 										code.push_back("\n\tmov\tdword	[" + it->first + " + ESI*4], eax");
 										code.push_back("\n\tpop\teax");
@@ -848,7 +867,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 
 									code.push_back("\n\tpush\teax");
 									code.push_back("\n\tmov\tesi, "+ to_string(posArray));
-									code.push_back("\n\tmov\teax, [" + auxOP + "]");
+									code.push_back("\n\tmov\teax, " + auxOP );
 									code.push_back("\n\tmov\tesi, "+ to_string(posArray2));
 									code.push_back("\n\tmov\tdword	[" + it->first + "], eax");
 									code.push_back("\n\tpop\teax");
@@ -953,14 +972,20 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								_erro = TRUE;
 								cout << "ERRO SEMANTICO:" << lineCount << ": Tipo de argumento inválido \n";
 							}
+							if(constTable.find(memOp) != constTable.end()){
+								operando = it->first;
+
+							}else{
+								operando = "[" + it->first + " + ESI*4]";
+							}
+
 
 							if(!itOp->first.compare("ADD")){
 								/*
 									ARQUIVO SAIDA:  ADD [CONST]/[SPACE 1]
 								*/
 								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tadd	eax, [" + it->first + " + ESI*4]");
-								code.push_back("\n\tadd	eax, [" + it->first + "]");
+								code.push_back("\n\tadd	eax, " + operando);
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("SUB")){
@@ -968,7 +993,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									ARQUIVO SAIDA:	SUB [CONST]/[SPACE 1]
 								*/
 								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tsub	eax, [" + it->first + " + ESI*4]");
+								code.push_back("\n\tsub	eax, " + operando);
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("MULT")){
@@ -976,7 +1001,8 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									ARQUIVO SAIDA:  MULT [CONST]/[SPACE 1]
 								*/
 								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tmul	dword	[" + it->first + " + ESI*4]");
+								code.push_back("\n\tmov	ecx, " + operando);
+								code.push_back("\n\tmul	ecx");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("DIV")){
@@ -984,7 +1010,8 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									ARQUIVO SAIDA:  DIV [CONST]/[SPACE 1]
 								*/
 								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tdiv	dword	[" + it->first + " + ESI*4]");
+								code.push_back("\n\tmov	ecx, " + operando);
+								code.push_back("\n\tdiv	ecx");
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("LOAD")){
@@ -1007,11 +1034,17 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  INPUT
 								*/
+								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tcall LerInteiro");
+								//_lerChar = TRUE;
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("OUTPUT")){
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
+								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tcall EscreverInteiro");
+								//_lerChar = TRUE;
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("C_INPUT")){
 								/*
@@ -1036,11 +1069,18 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
+
+								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tcall LerString");
+								_lerString = TRUE;
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("S_OUTPUT")){
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
+								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tcall EscreverString");
+								_escreverString = TRUE;
 								relativo.push_back(posCount+1);
 							}
 
@@ -1072,7 +1112,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 					space--;
 					while(space > 0)
 					{
-						code.push_back(",0");
+						code.push_back(", 0");
 						space--;
 						/*
 							ARQUIVO SAIDA: SPACE NUM_ESPAÇOS_ALOCADOS
@@ -1160,7 +1200,7 @@ void escreveFuncao(vector<string>&code){
 		/* Chamada de sistema */
 		code.push_back("\n\tmov	eax, 4");
 		code.push_back("\n\tmov	ebx, 0");
-		code.push_back("\n\tmov	ecx, [EBP + 8");
+		code.push_back("\n\tmov	ecx, [EBP + 8]");
 		code.push_back("\n\tmov	edx, 1");
 		code.push_back("\n\tint	80h");
 		/* Recupera o valor anterior do ACC*/
@@ -1172,7 +1212,7 @@ void escreveFuncao(vector<string>&code){
 	}
 
 	if(_lerString){
-		code.push_back("\n\tLerString:");
+		code.push_back("\nLerString:");
 		code.push_back("\n    push    ebp");
 		code.push_back("\n    mov ebp, esp");
 		/* Zera esi e coloca a string em EDI */
@@ -1198,9 +1238,36 @@ void escreveFuncao(vector<string>&code){
 		code.push_back("\n    pop ebp");
 
 		code.push_back("\n    ret");
+	}
 
+	if(_escreverString){
+		code.push_back("\nEscreverString:");
+		/* Frame de pilha */
+		code.push_back("\n\tpush    ebp");
+		code.push_back("\n\tmov ebp, esp");
+		/* Salva o acumulador, zera esi*/
+		code.push_back("\n\tpush    eax");
+		code.push_back("\n\tsub esi, esi");
+		/* Salva o argumento em edi*/
+		code.push_back("\n\tmov	edi, [EBP + 8]");
+		code.push_back("\n\tdec edi");
+		code.push_back("\n\tEscreverS:");
+		code.push_back("\n\tinc edi");
+		code.push_back("\n\tmov eax, 4");
+		code.push_back("\n\tmov ebx, 1");
+		code.push_back("\n\tmov ecx, edi");
+		code.push_back("\n\tmov edx, 1");
+		code.push_back("\n\tint 80h");
+		/* Verifica se a string ja acabou */
+		code.push_back("\n\tcmp byte [edi], 0");
+		code.push_back("\n\tjne EscreverS");/* Senao volta para o comeco do loop*/
+		code.push_back("\n\tFimEscreverS:");
+		code.push_back("\n\t;retorna ao valor anterior");
+		code.push_back("\n\tpop eax");
+		code.push_back("\n\tmov esp, ebp");
+		code.push_back("\n\tpop ebp");
 
-
+		code.push_back("\n\tret");
 	}
 
 }
