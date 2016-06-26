@@ -15,6 +15,8 @@
 using namespace std;
 
 int _erro = FALSE ;
+int _lerChar = FALSE, _escreverChar = FALSE,
+	_lerString = FALSE, _escreverString = FALSE;
 int	_sectionText = -1, 	_sectionData = -1;
 int _begin = FALSE, _end = FALSE;
 
@@ -26,3 +28,4 @@ int primeira_passagem(map<string,string>& opTable, map<string,int>& dirTable,
 						unordered_map<string,int> &defTable, unordered_multimap<string,int> &useTable,
 						vector<string> &code, vector<int>&relativo);
 int token_valido(string token);
+void escreveFuncao(vector<string>&code);

@@ -1007,27 +1007,40 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  INPUT
 								*/
-								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tpusha");
-								code.push_back("\n\tmov	eax, 4");
-								code.push_back("\n\tmov	ebx, 1");
-								code.push_back("\n\tmov	ecx, [" + it->first + " + ESI*4]");
-								code.push_back("\n\tmov	edx, 4");
-								code.push_back("\n\tpopa");
-								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("OUTPUT")){
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
-								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tpusha");
-								code.push_back("\n\tmov	eax, 3");
-								code.push_back("\n\tmov	ebx, 0");
-								code.push_back("\n\tmov	ecx, [" + it->first + " + ESI*4]");
-								code.push_back("\n\tmov	edx, 4");
-								code.push_back("\n\tpopa");
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("C_INPUT")){
+								/*
+									ARQUIVO SAIDA:  C_INPUT
+								*/
+								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tcall LerChar");
+								_lerChar = TRUE;
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+
+							}else if(!itOp->first.compare("C_OUTPUT")){
+								/*
+									ARQUIVO SAIDA:  OUTPUT
+								*/
+								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tcall EscreverChar");
+								_escreverChar = TRUE;
+								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("S_INPUT")){
+								/*
+									ARQUIVO SAIDA:  OUTPUT
+								*/
+								relativo.push_back(posCount+1);
+							}else if(!itOp->first.compare("S_OUTPUT")){
+								/*
+									ARQUIVO SAIDA:  OUTPUT
+								*/
 								relativo.push_back(posCount+1);
 							}
 
@@ -1084,6 +1097,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 			}else if(!it->first.compare("SECTION")){
 				if(!token[j+1].compare("DATA"))
 				{
+					escreveFuncao(code);
 					code.push_back("\n\nsection .data");
 
 				}else if(!token[j+1].compare("TEXT")){
@@ -1104,9 +1118,89 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 
 return 0;
 }
-
-
 /*
 	INTERRUPCOES DO SISTEMA
 */
 /*	INPUT, OUTPUT, C_INPUT, C_OUTPUT, S_INPUT, S_OUTPUT*/
+
+/* Função que escreve as funções Ler/EscreverChar, Ler/EscreverString e Ler/EscreverInteiro*/
+void escreveFuncao(vector<string>&code){
+
+	/* Funcao chamada por C_INPUT*/
+	if(_lerChar){
+		code.push_back("\nLerChar:");
+		    /*frame de pilha*/
+		    code.push_back("\n\tpush    ebp");
+		    code.push_back("\n\tmov ebp, esp");
+			/* Salva o ACC*/
+		    code.push_back("\n\tpush    eax");
+			/* Chamada de sistema */
+		    code.push_back("\n\tmov eax, 3");
+		    code.push_back("\n\tmov ebx, 1");
+		    code.push_back("\n\tmov ecx, [EBP + 8]");
+		    code.push_back("\n\tmov edx, 1");
+		    code.push_back("\n\tint 80h");
+			/* ACC retorna ao valor anterior*/
+		    code.push_back("\n\tpop    eax");
+		    code.push_back("\n\tmov esp, ebp");
+		    code.push_back("\n\tpop ebp");
+		    code.push_back("\n\tret");
+
+
+	}
+
+	/* Funcao chamada por C_OUTPUT */
+	if(_escreverChar){
+		code.push_back("\nEscreverChar: ");
+		/* Frame de pilha */
+		code.push_back("\n\tpush	ebp");
+		code.push_back("\n\tmov	ebp, esp");
+		/* Salva o acumulador */
+		code.push_back("\n\tpush	eax"); /* Salva o acumulador */
+		/* Chamada de sistema */
+		code.push_back("\n\tmov	eax, 4");
+		code.push_back("\n\tmov	ebx, 0");
+		code.push_back("\n\tmov	ecx, [EBP + 8");
+		code.push_back("\n\tmov	edx, 1");
+		code.push_back("\n\tint	80h");
+		/* Recupera o valor anterior do ACC*/
+		code.push_back("\n\tpop	eax");
+		code.push_back("\n\tmov	esp, ebp");
+		code.push_back("\n\tpop	ebp");
+		code.push_back("\n\tret");
+
+	}
+
+	if(_lerString){
+		code.push_back("\n\tLerString:");
+		code.push_back("\n    push    ebp");
+		code.push_back("\n    mov ebp, esp");
+		/* Zera esi e coloca a string em EDI */
+		code.push_back("\nsub esi, esi");
+		code.push_back("\nmov	edi, [EBP + 8]");
+		code.push_back("\ndec edi");
+
+		code.push_back("\nLerS:");
+		code.push_back("\ninc edi");
+		code.push_back("\ninc esi");
+		code.push_back("\nmov eax, 3");
+		code.push_back("\nmov ebx, 0");
+		code.push_back("\nmov ecx, edi");
+		code.push_back("\nmov edx, 1");
+		code.push_back("\nint 80h");
+		/* Verifica se astring ja acabou */
+		code.push_back("\ncmp byte [edi], 0x0A");
+		code.push_back("\n    jne LerS");
+		code.push_back("\nFimLerS:");
+		/* Retorna o tamanho da string */
+		code.push_back("\nmov eax, esi");
+		code.push_back("\n    mov esp, ebp");
+		code.push_back("\n    pop ebp");
+
+		code.push_back("\n    ret");
+
+
+
+	}
+
+}
