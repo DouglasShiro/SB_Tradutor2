@@ -1034,7 +1034,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  INPUT
 								*/
-								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tpush " + it->first);
 								code.push_back("\n\tcall LerInteiro");
 								//_lerChar = TRUE;
 								relativo.push_back(posCount+1);
@@ -1042,7 +1042,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
-								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tpush " + it->first);
 								code.push_back("\n\tcall EscreverInteiro");
 								//_lerChar = TRUE;
 								relativo.push_back(posCount+1);
@@ -1050,7 +1050,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  C_INPUT
 								*/
-								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tpush " + it->first);
 								code.push_back("\n\tcall LerChar");
 								_lerChar = TRUE;
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
@@ -1060,7 +1060,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
-								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tpush " + it->first);
 								code.push_back("\n\tcall EscreverChar");
 								_escreverChar = TRUE;
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
@@ -1070,7 +1070,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									ARQUIVO SAIDA:  OUTPUT
 								*/
 
-								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tpush " + it->first);
 								code.push_back("\n\tcall LerString");
 								_lerString = TRUE;
 								relativo.push_back(posCount+1);
@@ -1078,7 +1078,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
-								code.push_back("\n\tpop " + it->first);
+								code.push_back("\n\tpush " + it->first);
 								code.push_back("\n\tcall EscreverString");
 								_escreverString = TRUE;
 								relativo.push_back(posCount+1);
@@ -1108,7 +1108,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 						space = space *10 + (c -'0');
 					}
 					/* salva no vetor 00 space vezes*/
-					code.push_back("\tdw\t0");
+					code.push_back("\tdd\t0");
 					space--;
 					while(space > 0)
 					{
