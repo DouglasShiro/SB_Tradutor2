@@ -896,7 +896,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							ARQUIVO SAIDA:  JMP [OPERATOR]
 						*/
 
-						code.push_back("\n\tjmp [" + it->first + "]");
+						code.push_back("\n\tjmp	" + it->first);
 						cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 						relativo.push_back(posCount+1);
 
@@ -915,7 +915,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							ARQUIVO SAIDA:  JB [OPERATOR], 0x0
 						*/
 
-						code.push_back("\n\tjb [" + it->first + "]");
+						code.push_back("\n\tjb	" + it->first);
 						cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 						relativo.push_back(posCount+1);
 
@@ -934,7 +934,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							ARQUIVO SAIDA:  JA [OPERATOR], 0x0
 						*/
 
-						code.push_back("\n\tja [" + it->first + "]");
+						code.push_back("\n\tja	" + it->first);
 						cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 						relativo.push_back(posCount+1);
 
@@ -953,7 +953,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 							ARQUIVO SAIDA:  JZ [OPERATOR], 0x0
 						*/
 
-						code.push_back("\n\tjz [" + it->first + "]");
+						code.push_back("\n\tjz	" + it->first);
 						cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 						relativo.push_back(posCount+1);
 
@@ -1018,8 +1018,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  LOAD
 								*/
-								code.push_back("\n\tmov	esi, " + to_string(posArray));
-								code.push_back("\n\tmov	eax, [" + it->first + " + ESI*4]");
+								code.push_back("\n\tmov	eax," + it->first );
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("STORE")){
@@ -1034,23 +1033,23 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  INPUT
 								*/
-								code.push_back("\n\tpush " + it->first);
+								code.push_back("\n\tpush dword " + it->first);
 								code.push_back("\n\tcall LerInteiro");
-								//_lerChar = TRUE;
+								_lerInteiro = TRUE;
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("OUTPUT")){
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
-								code.push_back("\n\tpush " + it->first);
+								code.push_back("\n\tpush dword " + it->first);
 								code.push_back("\n\tcall EscreverInteiro");
-								//_lerChar = TRUE;
+								_escreverInteiro = TRUE;
 								relativo.push_back(posCount+1);
 							}else if(!itOp->first.compare("C_INPUT")){
 								/*
 									ARQUIVO SAIDA:  C_INPUT
 								*/
-								code.push_back("\n\tpush " + it->first);
+								code.push_back("\n\tpush dword " + it->first);
 								code.push_back("\n\tcall LerChar");
 								_lerChar = TRUE;
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
@@ -1060,7 +1059,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
-								code.push_back("\n\tpush " + it->first);
+								code.push_back("\n\tpush dword " + it->first);
 								code.push_back("\n\tcall EscreverChar");
 								_escreverChar = TRUE;
 								cout << "PosCount:" << posCount << "	OP: " << itOp->first << "\n";
@@ -1070,7 +1069,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 									ARQUIVO SAIDA:  OUTPUT
 								*/
 
-								code.push_back("\n\tpush " + it->first);
+								code.push_back("\n\tpush dword " + it->first);
 								code.push_back("\n\tcall LerString");
 								_lerString = TRUE;
 								relativo.push_back(posCount+1);
@@ -1078,7 +1077,7 @@ int segunda_passagem(map<string,string> &opTable, map<string,int> &dirTable,
 								/*
 									ARQUIVO SAIDA:  OUTPUT
 								*/
-								code.push_back("\n\tpush " + it->first);
+								code.push_back("\n\tpush dword " + it->first);
 								code.push_back("\n\tcall EscreverString");
 								_escreverString = TRUE;
 								relativo.push_back(posCount+1);
@@ -1169,23 +1168,22 @@ void escreveFuncao(vector<string>&code){
 	/* Funcao chamada por C_INPUT*/
 	if(_lerChar){
 		code.push_back("\nLerChar:");
-		    /*frame de pilha*/
-		    code.push_back("\n\tpush    ebp");
-		    code.push_back("\n\tmov ebp, esp");
-			/* Salva o ACC*/
-		    code.push_back("\n\tpush    eax");
-			/* Chamada de sistema */
-		    code.push_back("\n\tmov eax, 3");
-		    code.push_back("\n\tmov ebx, 1");
-		    code.push_back("\n\tmov ecx, [EBP + 8]");
-		    code.push_back("\n\tmov edx, 1");
-		    code.push_back("\n\tint 80h");
-			/* ACC retorna ao valor anterior*/
-		    code.push_back("\n\tpop    eax");
-		    code.push_back("\n\tmov esp, ebp");
-		    code.push_back("\n\tpop ebp");
-		    code.push_back("\n\tret");
-
+	    /*frame de pilha*/
+	    code.push_back("\n\tpush    ebp");
+	    code.push_back("\n\tmov ebp, esp");
+		/* Salva o ACC*/
+	    code.push_back("\n\tpusha");
+		/* Chamada de sistema */
+	    code.push_back("\n\tmov eax, 3");
+	    code.push_back("\n\tmov ebx, 0");
+	    code.push_back("\n\tmov ecx, [EBP + 8]");
+	    code.push_back("\n\tmov edx, 1");
+	    code.push_back("\n\tint 80h");
+		/* ACC retorna ao valor anterior*/
+	    code.push_back("\n\tpop    eax");
+	    code.push_back("\n\tmov esp, ebp");
+	    code.push_back("\n\tpopa");
+	    code.push_back("\n\tret 4");
 
 	}
 
@@ -1196,25 +1194,26 @@ void escreveFuncao(vector<string>&code){
 		code.push_back("\n\tpush	ebp");
 		code.push_back("\n\tmov	ebp, esp");
 		/* Salva o acumulador */
-		code.push_back("\n\tpush	eax"); /* Salva o acumulador */
+		code.push_back("\n\tpusha"); /* Salva o acumulador */
 		/* Chamada de sistema */
 		code.push_back("\n\tmov	eax, 4");
-		code.push_back("\n\tmov	ebx, 0");
+		code.push_back("\n\tmov	ebx, 1");
 		code.push_back("\n\tmov	ecx, [EBP + 8]");
 		code.push_back("\n\tmov	edx, 1");
 		code.push_back("\n\tint	80h");
 		/* Recupera o valor anterior do ACC*/
-		code.push_back("\n\tpop	eax");
+		code.push_back("\n\tpopa");
 		code.push_back("\n\tmov	esp, ebp");
 		code.push_back("\n\tpop	ebp");
-		code.push_back("\n\tret");
-
+		code.push_back("\n\tret	4");
 	}
 
+	/* Funcao chamada por S_INPUT*/
 	if(_lerString){
 		code.push_back("\nLerString:");
 		code.push_back("\n    push    ebp");
 		code.push_back("\n    mov ebp, esp");
+		code.push_back("\n    pusha");
 		/* Zera esi e coloca a string em EDI */
 		code.push_back("\nsub esi, esi");
 		code.push_back("\nmov	edi, [EBP + 8]");
@@ -1235,18 +1234,20 @@ void escreveFuncao(vector<string>&code){
 		/* Retorna o tamanho da string */
 		code.push_back("\nmov eax, esi");
 		code.push_back("\n    mov esp, ebp");
+		code.push_back("\n    popa");
 		code.push_back("\n    pop ebp");
 
-		code.push_back("\n    ret");
+		code.push_back("\n    ret 4");
 	}
 
+	/* Funcao chamada por S_OUTPUT*/
 	if(_escreverString){
 		code.push_back("\nEscreverString:");
 		/* Frame de pilha */
 		code.push_back("\n\tpush    ebp");
 		code.push_back("\n\tmov ebp, esp");
 		/* Salva o acumulador, zera esi*/
-		code.push_back("\n\tpush    eax");
+		code.push_back("\n\tpusha");
 		code.push_back("\n\tsub esi, esi");
 		/* Salva o argumento em edi*/
 		code.push_back("\n\tmov	edi, [EBP + 8]");
@@ -1263,11 +1264,53 @@ void escreveFuncao(vector<string>&code){
 		code.push_back("\n\tjne EscreverS");/* Senao volta para o comeco do loop*/
 		code.push_back("\n\tFimEscreverS:");
 		code.push_back("\n\t;retorna ao valor anterior");
-		code.push_back("\n\tpop eax");
+		code.push_back("\n\tpopa");
 		code.push_back("\n\tmov esp, ebp");
 		code.push_back("\n\tpop ebp");
 
-		code.push_back("\n\tret");
+		code.push_back("\n\tret 4");
+	}
+
+	/* Funcao chamada por INPUT*/
+	if(_lerInteiro){
+		code.push_back("\nLerInteiro:");
+		/*frame de pilha*/
+		code.push_back("\n\tpush    ebp");
+		code.push_back("\n\tmov ebp, esp");
+		/* Salva o ACC*/
+		code.push_back("\n\tpush    eax");
+		/* Chamada de sistema */
+		code.push_back("\n\tmov eax, 3");
+		code.push_back("\n\tmov ebx, 0");
+		code.push_back("\n\tmov ecx, [EBP + 8]");
+		code.push_back("\n\tmov edx, 1");
+		code.push_back("\n\tint 80h");
+		/* ACC retorna ao valor anterior*/
+		code.push_back("\n\tpop    eax");
+		code.push_back("\n\tmov esp, ebp");
+		code.push_back("\n\tpop ebp");
+		code.push_back("\n\tret 4");
+	}
+
+	/* Funcao chamada por OUTPUT*/
+	if(_escreverInteiro){
+		code.push_back("\nEscreverInteiro:");
+		/*frame de pilha*/
+		code.push_back("\n\tpush    ebp");
+		code.push_back("\n\tmov ebp, esp");
+		/* Salva o ACC*/
+		code.push_back("\n\tpush    eax");
+		/* Chamada de sistema */
+		code.push_back("\n\tmov eax, 4");
+		code.push_back("\n\tmov ebx, 1");
+		code.push_back("\n\tmov ecx, [EBP + 8]");
+		code.push_back("\n\tmov edx, 1");
+		code.push_back("\n\tint 80h");
+		/* ACC retorna ao valor anterior*/
+		code.push_back("\n\tpop    eax");
+		code.push_back("\n\tmov esp, ebp");
+		code.push_back("\n\tpop ebp");
+		code.push_back("\n\tret 4");
 	}
 
 }

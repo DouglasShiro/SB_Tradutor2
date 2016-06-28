@@ -16,7 +16,8 @@ using namespace std;
 
 int _erro = FALSE ;
 int _lerChar = FALSE, _escreverChar = FALSE,
-	_lerString = FALSE, _escreverString = FALSE;
+	_lerString = FALSE, _escreverString = FALSE,
+	_lerInteiro = FALSE, _escreverInteiro = FALSE;
 int	_sectionText = -1, 	_sectionData = -1;
 int _begin = FALSE, _end = FALSE;
 
